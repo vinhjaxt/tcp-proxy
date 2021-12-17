@@ -1,0 +1,26 @@
+[package]
+name = "tcp-proxy"
+version = "0.1.0"
+edition = "2021"
+autobins = false
+
+[dependencies]
+tokio = { version = "1.15",features = ["full"] }
+#tokio-stream = { version = "0.1" }
+futures = { version = "0.3", features = ["thread-pool"]}
+
+[[bin]]
+name = "tcp-tcp"
+path = "src/tcp-tcp.rs"
+
+[[bin]]
+name = "tcp-unix"
+path = "src/tcp-unix.rs"
+
+[[bin]]
+name = "unix-tcp"
+path = "src/unix-tcp.rs"
+
+[[bin]]
+name = "unix-unix"
+path = "src/unix-unix.rs"
