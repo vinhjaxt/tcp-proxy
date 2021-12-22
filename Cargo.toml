@@ -5,9 +5,7 @@ edition = "2021"
 autobins = false
 
 [dependencies]
-tokio = { version = "1.15",features = ["full"] }
-#tokio-stream = { version = "0.1" }
-futures = { version = "0.3", features = ["thread-pool"]}
+monoio = {version = "0.0.3", features = ["sync", "utils", "bytes", "macros"]}
 
 [[bin]]
 name = "tcp-tcp"
