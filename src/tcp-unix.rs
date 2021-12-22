@@ -60,11 +60,10 @@ async fn transfer(mut inbound: UnixStream, proxy_addr: String) -> Result<(), Box
     let (mut ro, mut wo) = outbound.split();
 
     tokio::select! {
-        _ = tokio::io::copy(&mut ri, &mut wo) => {}
-        _ = tokio::io::copy(&mut ro, &mut wi) => {}
+        _ = async { tokio::io::copy(&mut ri, &mut wo).await?; sleep(LAST_DATA_DELAY).await; wo.shutdown().await } => {}
+        _ = async { tokio::io::copy(&mut ro, &mut wi).await?; sleep(LAST_DATA_DELAY).await; wi.shutdown().await } => {}
     };
 
-    sleep(LAST_DATA_DELAY).await;
     let _ = wo.shutdown().await;
     let _ = wi.shutdown().await;
 
