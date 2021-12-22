@@ -3,15 +3,17 @@
 //!
 #![warn(rust_2018_idioms)]
 
-use tokio::io;
 use tokio::io::AsyncWriteExt;
 use tokio::net::{UnixListener, UnixStream};
+use tokio::time::{sleep, Duration};
 
 use futures::FutureExt;
 use std::env;
 use std::error::Error;
 use std::fs::{self, Permissions};
 use std::os::unix::fs::PermissionsExt;
+
+static LAST_DATA_DELAY: Duration = Duration::from_secs(1);
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -45,22 +47,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 async fn transfer(mut inbound: UnixStream, proxy_addr: String) -> Result<(), Box<dyn Error>> {
-    let mut outbound = UnixStream::connect(proxy_addr).await?;
+    let mut outbound = match UnixStream::connect(proxy_addr).await {
+        Err(e) => {
+            let _ = inbound.shutdown();
+            return Err(Box::new(e));
+        }
+        Ok(r) => r
+    };
 
     let (mut ri, mut wi) = inbound.split();
     let (mut ro, mut wo) = outbound.split();
 
-    let client_to_server = async {
-        io::copy(&mut ri, &mut wo).await?;
-        wo.shutdown().await
+    tokio::select! {
+        _ = tokio::io::copy(&mut ri, &mut wo) => {}
+        _ = tokio::io::copy(&mut ro, &mut wi) => {}
     };
 
-    let server_to_client = async {
-        io::copy(&mut ro, &mut wi).await?;
-        wi.shutdown().await
-    };
-
-    tokio::try_join!(client_to_server, server_to_client)?;
+    sleep(LAST_DATA_DELAY).await;
+    let _ = wo.shutdown().await;
+    let _ = wi.shutdown().await;
 
     Ok(())
 }
