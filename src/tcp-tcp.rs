@@ -53,9 +53,19 @@ async fn transfer(mut inbound: TcpStream, proxy_addr: String) -> Result<(), Box<
     let (mut ro, mut wo) = outbound.split();
 
     tokio::select! {
-        _ = async { tokio::io::copy(&mut ri, &mut wo).await?; sleep(LAST_DATA_DELAY).await; wo.shutdown().await } => {}
-        _ = async { tokio::io::copy(&mut ro, &mut wi).await?; sleep(LAST_DATA_DELAY).await; wi.shutdown().await } => {}
-    };
+        _ = async {
+            let err = tokio::io::copy(&mut ri, &mut wo).await.err();
+            sleep(LAST_DATA_DELAY).await;
+            let _ = wo.shutdown().await;
+            err
+        } => {}
+        _ = async {
+            let err = tokio::io::copy(&mut ro, &mut wi).await.err();
+            sleep(LAST_DATA_DELAY).await;
+            let _ = wi.shutdown().await;
+            err
+        } => {}
+    }; 
 
     let _ = wo.shutdown().await;
     let _ = wi.shutdown().await;
