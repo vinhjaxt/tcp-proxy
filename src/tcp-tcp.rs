@@ -6,6 +6,7 @@
 use tokio::io::AsyncWriteExt;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::time::{sleep, Duration};
+use std::net::{SocketAddr, ToSocketAddrs};
 
 use futures::FutureExt;
 use std::env;
@@ -17,7 +18,7 @@ static LAST_DATA_DELAY: Duration = Duration::from_secs(1);
 async fn main() -> Result<(), Box<dyn Error>> {
     let server_addr = env::args()
         .nth(1)
-        .unwrap_or_else(|| "127.0.0.1:8080".to_string());
+        .unwrap_or_else(|| "127.0.0.1:8080".to_string()).to_socket_addrs().unwrap().next().unwrap();
     let listen_addr = env::args()
         .nth(2)
         .unwrap_or_else(|| "127.0.0.1:8081".to_string());
@@ -40,7 +41,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn transfer(mut inbound: TcpStream, proxy_addr: String) -> Result<(), Box<dyn Error>> {
+async fn transfer(mut inbound: TcpStream, proxy_addr: SocketAddr) -> Result<(), Box<dyn Error>> {
     let mut outbound = match TcpStream::connect(proxy_addr).await {
         Err(e) => {
             let _ = inbound.shutdown();
