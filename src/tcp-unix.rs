@@ -21,7 +21,7 @@ static LAST_DATA_DELAY: Duration = Duration::from_secs(1);
 async fn main() -> Result<(), Box<dyn Error>> {
     let server_addr = env::args()
         .nth(1)
-        .unwrap_or_else(|| "127.0.0.1:8080".to_string()).to_socket_addrs().unwrap().next().unwrap();
+        .unwrap_or_else(|| "127.0.0.1:8080".to_string());
     let listen_addr = env::args()
         .nth(2)
         .unwrap_or_else(|| "/tmp/unix.sock".to_string());
@@ -36,9 +36,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
     fs::set_permissions(listen_addr, Permissions::from_mode(0o777))?;
 
     while let Ok((inbound, _)) = listener.accept().await {
-        let transfer = transfer(inbound, server_addr.clone()).map(|r| {
+        let resolv_proxy_addrs = server_addr.clone().to_socket_addrs();
+        if resolv_proxy_addrs.is_err() {
+            eprintln!("Resolve error: invalid address");
+            continue;
+        }
+        let resolv_proxy_addr = resolv_proxy_addrs.unwrap().next();
+        if resolv_proxy_addr.is_none() {
+            eprintln!("Resolve error no ip found");
+            continue;
+        }
+        let transfer = transfer(inbound, resolv_proxy_addr.unwrap()).map(|r| {
             if let Err(e) = r {
-                println!("Failed to transfer; error={}", e);
+                eprintln!("Failed to transfer; error={}", e);
             }
         });
 

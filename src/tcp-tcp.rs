@@ -29,7 +29,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let listener = TcpListener::bind(listen_addr).await?;
 
     while let Ok((inbound, _)) = listener.accept().await {
-        let transfer = transfer(inbound, server_addr.clone()).map(|r| {
+        let resolv_proxy_addrs = server_addr.clone().to_socket_addrs();
+        if resolv_proxy_addrs.is_err() {
+            eprintln!("Resolve error: invalid address");
+            continue;
+        }
+        let resolv_proxy_addr = resolv_proxy_addrs.unwrap().next();
+        if resolv_proxy_addr.is_none() {
+            eprintln!("Resolve error no ip found");
+            continue;
+        }
+        let transfer = transfer(inbound, resolv_proxy_addr.unwrap().clone()).map(|r| {
             if let Err(e) = r {
                 println!("Failed to transfer; error={}", e);
             }
