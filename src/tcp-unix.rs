@@ -5,9 +5,8 @@
 
 use tokio::io::AsyncWriteExt;
 use tokio::net::{TcpStream};
-use tokio::net::{UnixListener, UnixStream};
+use tokio::net::{UnixListener, UnixStream, lookup_host};
 use tokio::time::{sleep, Duration};
-use std::net::{SocketAddr, ToSocketAddrs};
 
 use futures::FutureExt;
 use std::env;
@@ -36,17 +35,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     fs::set_permissions(listen_addr, Permissions::from_mode(0o777))?;
 
     while let Ok((inbound, _)) = listener.accept().await {
-        let resolv_proxy_addrs = server_addr.clone().to_socket_addrs();
-        if resolv_proxy_addrs.is_err() {
-            eprintln!("Resolve error: invalid address");
-            continue;
-        }
-        let resolv_proxy_addr = resolv_proxy_addrs.unwrap().next();
-        if resolv_proxy_addr.is_none() {
-            eprintln!("Resolve error no ip found");
-            continue;
-        }
-        let transfer = transfer(inbound, resolv_proxy_addr.unwrap()).map(|r| {
+        let transfer = transfer(inbound, server_addr.clone()).map(|r| {
             if let Err(e) = r {
                 eprintln!("Failed to transfer; error={}", e);
             }
@@ -58,8 +47,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn transfer(mut inbound: UnixStream, proxy_addr: SocketAddr) -> Result<(), Box<dyn Error>> {
-    let mut outbound = match TcpStream::connect(proxy_addr).await {
+async fn transfer(mut inbound: UnixStream, proxy_addr: String) -> Result<(), Box<dyn Error>> {
+    let mut addrs = lookup_host(proxy_addr).await?;
+
+    let mut outbound = match TcpStream::connect(addrs.next().unwrap()).await {
         Err(e) => {
             let _ = inbound.shutdown();
             return Err(Box::new(e));
