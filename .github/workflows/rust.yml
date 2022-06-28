@@ -1,0 +1,92 @@
+name: Rust
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      # Build amd64 gnu
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-unknown-linux-gnu
+          override: true
+      - name: Build x64 gnu
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target x86_64-unknown-linux-gnu --release
+      # Done amd64 gnu
+
+      # Build amd64 musl
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-unknown-linux-musl
+          override: true
+      - name: Build x64 musl
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target x86_64-unknown-linux-musl --release
+      # Done amd64 musl
+
+      # Build arm64 musl
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: aarch64-unknown-linux-musl
+          override: true
+      - name: Build aarch64 musl
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target aarch64-unknown-linux-musl --release
+      # Done arm64 musl
+
+      # Create release
+      - name: Generate release tag
+        id: tag
+        run: |
+          echo "::set-output name=release_tag::ActionBuild_$(date +"%Y.%m.%d_%H-%M-%S")"
+      - name: Move files
+        run: |
+          # TCP-TCP
+          mv ./target/aarch64-unknown-linux-musl/release/tcp-tcp ./tcp-tcp-linux-musl-aarch64
+          mv ./target/x86_64-unknown-linux-musl/release/tcp-tcp ./tcp-tcp-linux-musl-amd64
+          mv ./target/x86_64-unknown-linux-gnu/release/tcp-tcp ./tcp-tcp-linux-gnu-amd64
+          # TCP-UNIX
+          mv ./target/aarch64-unknown-linux-musl/release/tcp-unix ./tcp-unix-linux-musl-aarch64
+          mv ./target/x86_64-unknown-linux-musl/release/tcp-unix ./tcp-unix-linux-musl-amd64
+          mv ./target/x86_64-unknown-linux-gnu/release/tcp-unix ./tcp-unix-linux-gnu-amd64
+          # UNIX-TCP
+          mv ./target/aarch64-unknown-linux-musl/release/unix-tcp ./unix-tcp-linux-musl-aarch64
+          mv ./target/x86_64-unknown-linux-musl/release/unix-tcp ./unix-tcp-linux-musl-amd64
+          mv ./target/x86_64-unknown-linux-gnu/release/unix-tcp ./unix-tcp-linux-gnu-amd64
+          # UNIX-UNIX
+          mv ./target/aarch64-unknown-linux-musl/release/unix-unix ./unix-unix-linux-musl-aarch64
+          mv ./target/x86_64-unknown-linux-musl/release/unix-unix ./unix-unix-linux-musl-amd64
+          mv ./target/x86_64-unknown-linux-gnu/release/unix-unix ./unix-unix-linux-gnu-amd64
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.release_tag }}
+          files: |
+            ./tcp-tcp-linux-musl-aarch64
+            ./tcp-tcp-linux-musl-amd64
+            ./tcp-tcp-linux-gnu-amd64
+      # Done release
