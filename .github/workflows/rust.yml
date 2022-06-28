@@ -86,7 +86,20 @@ jobs:
         with:
           tag_name: ${{ steps.tag.outputs.release_tag }}
           files: |
+            # TCP-TCP
             ./tcp-tcp-linux-musl-aarch64
             ./tcp-tcp-linux-musl-amd64
             ./tcp-tcp-linux-gnu-amd64
+            # UNIX-TCP
+            ./unix-tcp-linux-musl-aarch64
+            ./unix-tcp-linux-musl-amd64
+            ./unix-tcp-linux-gnu-amd64
+            # TCP-UNIX
+            ./tcp-unix-linux-musl-aarch64
+            ./tcp-unix-linux-musl-amd64
+            ./tcp-unix-linux-gnu-amd64
+            # UNIX-UNIX
+            ./unix-unix-linux-musl-aarch64
+            ./unix-unix-linux-musl-amd64
+            ./unix-unix-linux-gnu-amd64
       # Done release
