@@ -1,8 +1,7 @@
 #![warn(rust_2018_idioms)]
 
-use tokio::io::AsyncWriteExt;
 use tokio::io::copy_bidirectional;
-use tokio::net::{TcpStream, UnixListener, UnixStream, lookup_host};
+use tokio::net::{TcpStream, UnixListener, lookup_host};
 
 use futures::FutureExt;
 use std::env;
@@ -24,7 +23,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let _ = fs::remove_file(&listen_addr).is_err();
 
-    let listener = UnixListener::bind(&listen_addr).await?;
+    let listener = UnixListener::bind(&listen_addr)?;
 
     fs::set_permissions(listen_addr, Permissions::from_mode(0o777))?;
 
@@ -37,7 +36,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     eprintln!("lookup: {}", e);
                     return;
                 }
-                Ok(r) => match r.next() {
+                Ok(mut r) => match r.next() {
                     None => {
                         let _ = inbound.shutdown();
                         eprintln!("lookup: no addr");
