@@ -22,16 +22,32 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let listener = TcpListener::bind(listen_addr).await?;
 
     while let Ok((mut inbound, _)) = listener.accept().await {
-        let mut outbound = TcpStream::connect(server_addr.clone()).await?;
-
         tokio::spawn(async move {
+            let mut addrs = match lookup_host(server_addr.clone()).await {
+                Err(e) => {
+                    let _ = inbound.shutdown();
+                    eprintln!("lookup: {}", e);
+                    return;
+                }
+                Ok(r) => r
+            }
+    
+            let mut outbound = match TcpStream::connect(addrs.next().unwrap()).await {
+                Err(e) => {
+                    let _ = inbound.shutdown();
+                    eprintln!("connect: {}", e);
+                    return;
+                }
+                Ok(r) => r
+            };
+
             copy_bidirectional(&mut inbound, &mut outbound)
-                .map(|r| {
-                    if let Err(e) = r {
-                        println!("Failed to transfer; error={}", e);
-                    }
-                })
-                .await
+            .map(|r| {
+                if let Err(e) = r {
+                    eprintln!("transfer: {}", e);
+                }
+            })
+            .await
         });
     }
 
