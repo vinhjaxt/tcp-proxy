@@ -1,7 +1,7 @@
 #![warn(rust_2018_idioms)]
 
 use tokio::io::copy_bidirectional;
-use tokio::net::{TcpListener, TcpStream};
+use tokio::net::{TcpListener, TcpStream, lookup_host};
 
 use futures::FutureExt;
 use std::env;
@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     return;
                 }
                 Ok(r) => r
-            }
+            };
     
             let mut outbound = match TcpStream::connect(addrs.next().unwrap()).await {
                 Err(e) => {
@@ -41,8 +41,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 Ok(r) => r
             };
 
-            copy_bidirectional(&mut inbound, &mut outbound)
-            .map(|r| {
+            copy_bidirectional(&mut inbound, &mut outbound).map(|r| {
                 if let Err(e) = r {
                     eprintln!("transfer: {}", e);
                 }
