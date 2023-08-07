@@ -24,7 +24,7 @@ jobs:
           toolchain: stable
           target: ${{ matrix.target }}
           override: true
-      - name: Build x64 gnu
+      - name: Build ${{ matrix.target }}
         uses: actions-rs/cargo@v1
         with:
           use-cross: true
