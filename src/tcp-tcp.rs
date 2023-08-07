@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     eprintln!("lookup: {}", e);
                     return;
                 }
-                Ok(r) => match r.next() {
+                Ok(mut r) => match r.next() {
                     None => {
                         let _ = inbound.shutdown();
                         eprintln!("lookup: no addr");
