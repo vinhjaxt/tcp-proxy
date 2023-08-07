@@ -23,8 +23,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let listener = TcpListener::bind(listen_addr).await?;
 
     while let Ok((mut inbound, _)) = listener.accept().await {
+        let to_addr = server_addr.clone();
         tokio::spawn(async move {
-            let addr = match lookup_host(server_addr.clone()).await {
+            let addr = match lookup_host(to_addr).await {
                 Err(e) => {
                     let _ = inbound.shutdown();
                     eprintln!("lookup: {}", e);
