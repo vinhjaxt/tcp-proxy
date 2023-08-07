@@ -83,8 +83,6 @@ jobs:
       - name: Generate release tag
         id: tag
         run: |
-          sudo timedatectl set-timezone Asia/Ho_Chi_Minh
-          sudo date -s "$(wget -qSO- --max-redirect=0 google.com 2>&1 | grep Date: | cut -d' ' -f5-8)Z"
           echo "release_tag=ActionBuild_${{ matrix.target }}_$(date +"%Y.%m.%d_%H-%M-%S")" >> $GITHUB_OUTPUT
       - name: Move files
         run: |
