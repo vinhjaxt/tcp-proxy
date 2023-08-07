@@ -1,5 +1,7 @@
 # tcp-proxy
-A TCP Proxy (Tcp - Tcp, Unix - Unix, Tcp - Unix, Unix - Tcp)
+A proxy that forwards data to another server and forwards that server's responses back to clients.
+
+Tcp - Tcp, Unix - Unix, Tcp - Unix, Unix - Tcp
 
 # Run
 ```
