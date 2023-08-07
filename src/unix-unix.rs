@@ -1,6 +1,7 @@
 #![warn(rust_2018_idioms)]
 
 use tokio::io::AsyncWriteExt;
+use tokio::io::copy_bidirectional;
 use tokio::net::{UnixListener, UnixStream};
 
 use futures::FutureExt;
