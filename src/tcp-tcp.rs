@@ -24,16 +24,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     while let Ok((mut inbound, _)) = listener.accept().await {
         tokio::spawn(async move {
-            let mut addrs = match lookup_host(server_addr.clone()).await {
+            let addr = match lookup_host(server_addr.clone()).await {
                 Err(e) => {
                     let _ = inbound.shutdown();
                     eprintln!("lookup: {}", e);
                     return;
                 }
-                Ok(r) => r
+                Ok(r) => match r.next() {
+                    Err(e) => {
+                        let _ = inbound.shutdown();
+                        eprintln!("lookup: {}", e);
+                        return;
+                    }
+                    Ok(a) => a
+                }
             };
     
-            let mut outbound = match TcpStream::connect(addrs.next().unwrap()).await {
+            let mut outbound = match TcpStream::connect(addr).await {
                 Err(e) => {
                     let _ = inbound.shutdown();
                     eprintln!("connect: {}", e);
