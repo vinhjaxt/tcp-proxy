@@ -13,7 +13,7 @@ jobs:
   build:
     strategy:
           matrix:
-            target: [x86_64-unknown-linux-gnu, x86_64-apple-darwin, x86_64-unknown-linux-musl, aarch64-unknown-linux-musl]
+            target: [x86_64-unknown-linux-gnu, x86_64-unknown-linux-musl, aarch64-unknown-linux-musl, aarch64-unknown-linux-gnu]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -28,6 +28,53 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           use-cross: true
+          command: build
+          args: --target ${{ matrix.target }} --release
+      # Done
+
+      # Create release
+      - name: Generate release tag
+        id: tag
+        run: |
+          sudo timedatectl set-timezone Asia/Ho_Chi_Minh
+          sudo date -s "$(wget -qSO- --max-redirect=0 google.com 2>&1 | grep Date: | cut -d' ' -f5-8)Z"
+          echo "release_tag=ActionBuild_${{ matrix.target }}_$(date +"%Y.%m.%d_%H-%M-%S")" >> $GITHUB_OUTPUT
+      - name: Move files
+        run: |
+          mv ./target/${{ matrix.target }}/release/tcp-tcp ./tcp-tcp-${{ matrix.target }}
+          mv ./target/${{ matrix.target }}/release/tcp-unix ./tcp-unix-${{ matrix.target }}
+          mv ./target/${{ matrix.target }}/release/unix-tcp ./unix-tcp-${{ matrix.target }}
+          mv ./target/${{ matrix.target }}/release/unix-unix ./unix-unix-${{ matrix.target }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.release_tag }}
+          files: |
+            ./tcp-tcp-${{ matrix.target }}
+            ./unix-tcp-${{ matrix.target }}
+            ./tcp-unix-${{ matrix.target }}
+            ./unix-unix-${{ matrix.target }}
+      # Done release
+
+  build-darwin:
+    strategy:
+          matrix:
+            target: [x86_64-apple-darwin]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      # Build each target
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+          default: true
+      - name: Build ${{ matrix.target }}
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: false
           command: build
           args: --target ${{ matrix.target }} --release
       # Done
