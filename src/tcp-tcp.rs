@@ -32,12 +32,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     return;
                 }
                 Ok(r) => match r.next() {
-                    Err(e) => {
+                    None => {
                         let _ = inbound.shutdown();
                         eprintln!("lookup: {}", e);
                         return;
                     }
-                    Ok(a) => a
+                    Some(a) => a
                 }
             };
     
